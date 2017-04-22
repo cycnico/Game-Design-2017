@@ -9,8 +9,11 @@ public class PlayerController : MonoBehaviour
     public Rigidbody rigidBody;
     public JumpSensor JumpSensor;
     public GunManager gunManager;
+    public FireGunManager FiregunManager;
     public GameUIManager uiManager;
     public AudioSource runsound;
+    public GameObject gun;
+    public GameObject firegun;
 
     public float rotateSpeed;
     public float currentRotateX = 0;
@@ -19,6 +22,7 @@ public class PlayerController : MonoBehaviour
     public int hp = 100;
 
     private Animator animatorController;
+    private int Firemode = 0;
     float currentSpeed = 0;
 
     // Use this for initialization
@@ -43,8 +47,10 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
+            currentSpeed = 0 ;
+            runsound.Stop();
+            animatorController.SetFloat("Speed", currentSpeed);
             uiManager.PlayerDiedAnimation();
-
             rigidBody.gameObject.GetComponent<Collider>().enabled = false;
             rigidBody.useGravity = false;
             rigidBody.velocity = Vector3.zero;
@@ -60,7 +66,15 @@ public class PlayerController : MonoBehaviour
         Cursor.visible = false;
         if (Input.GetMouseButton(0))
         {
-            gunManager.TryToTriggerGun();
+            if (Firemode == 0)
+                gunManager.TryToTriggerGun();
+            if (Firemode == 1)
+                FiregunManager.TryToTriggerGun();
+        }
+
+        if (!Input.GetMouseButton(0))
+        {
+            FiregunManager.StopFire();
         }
 
         //決定鍵盤input的結果
@@ -70,6 +84,20 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKey(KeyCode.D)) { movDirection.x += 1; }
         if (Input.GetKey(KeyCode.A)) { movDirection.x -= 1; }
         movDirection = movDirection.normalized;
+
+        //決定武器
+        if (Input.GetKey(KeyCode.Alpha1)) {
+            Firemode = 0;
+            firegun.SetActive(false);
+            gun.SetActive(true);
+        }
+
+        if (Input.GetKey(KeyCode.Alpha2))
+        {
+            Firemode = 1;
+            gun.SetActive(false);
+            firegun.SetActive(true);
+        }
 
         //決定要給Animator的動畫參數
         if (movDirection.magnitude == 0 || !JumpSensor.IsCanJump()) { currentSpeed = 0; }

@@ -4,17 +4,21 @@ using DG.Tweening;
 
 public class MonsterScript : MonoBehaviour
 {
-
-    private Animator animator;
-    private float MinimumHitPeriod = 1f;
-    private float HitCounter = 0;
-    public float CurrentHP = 100;
-
-    public float MoveSpeed;
     public GameObject FollowTarget;
-    private Rigidbody rigidBody;
+    public GameObject bulletCandidate;
     public CollisionListScript PlayerSensor;
     public CollisionListScript AttackSensor;
+    public float CurrentHP = 100;
+    public float MoveSpeed;
+
+    private Animator animator;
+    private Rigidbody rigidBody;
+    private float MinimumHitPeriod = 1f;
+    private float MinimumFirePeriod = 1f;
+    private float MinimumShootPeriod = 1f;
+    private float HitCounter = 0;
+    private float ShootCounter = 0;
+
 
     public void AttackPlayer()
     {
@@ -53,7 +57,6 @@ public class MonsterScript : MonoBehaviour
                     this.transform.LookAt(lookAt);
                     animator.SetBool("Run", true);
 
-
                     if (AttackSensor.CollisionObjects.Count > 0)
                     {
                         animator.SetBool("Attack", true);
@@ -63,6 +66,22 @@ public class MonsterScript : MonoBehaviour
                     {
                         animator.SetBool("Attack", false);
                         rigidBody.velocity = this.transform.forward * MoveSpeed;
+
+                        Vector3 ShootDirection = (FollowTarget.gameObject.transform.position - this.transform.position).normalized;
+                        if (ShootCounter <= 0)
+                        {
+                            ShootCounter = MinimumShootPeriod;
+                            GameObject newBullet = GameObject.Instantiate(bulletCandidate);
+                            EnemyBulletScript bullet = newBullet.GetComponent<EnemyBulletScript>();
+                            bullet.transform.position = this.transform.position;
+                            bullet.transform.rotation = this.transform.rotation;
+                            bullet.transform.position = new Vector3 (bullet.transform.position.x, bullet.transform.position.y + 1.5f,bullet.transform.position.z);
+                            bullet.InitAndShoot(ShootDirection);
+                        }
+                        else
+                        {
+                            ShootCounter -= Time.deltaTime;
+                        }
                     }
                 }
             }
@@ -87,6 +106,20 @@ public class MonsterScript : MonoBehaviour
             if (CurrentHP <= 0) { BuryTheBody(); }
         }
     }
+
+    public void OnFire(float value)
+    {
+        CurrentHP -= value;
+        if (HitCounter <= 0)
+        {
+            FollowTarget = GameObject.FindGameObjectWithTag("Player");
+            HitCounter = MinimumHitPeriod;
+            animator.SetTrigger("Hit");
+        }
+        animator.SetFloat("HP", CurrentHP);
+        if (CurrentHP <= 0) { BuryTheBody(); }
+    }
+
     void BuryTheBody()
     {
         this.GetComponent<Rigidbody>().useGravity = false;
@@ -99,6 +132,5 @@ public class MonsterScript : MonoBehaviour
             });
         });
     }
-
 
 }
